@@ -57,7 +57,7 @@ source install/setup.bash
 To start the simulation, use the following command inside the devcontainer after making sure the workspace was built and sourced:
 
 ```bash
-ros2 launch src/ros2_sim_ur3_description/launch/simulation.launch.py
+ros2 launch src/ros2_sim_simulation/launch/simulation.launch.py
 ```
 
 ## Visualizing with Rviz2
