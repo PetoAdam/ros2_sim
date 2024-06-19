@@ -1,5 +1,15 @@
+# ROS 2 install log and build folders
 install
 log
 build
 
-liburdfdom-model3.0_3.0.1-1_amd64.deb
+# This might not be correctly installed by the devcontainer, so manual installation might be neccessary
+# sudo apt install ./liburdfdom-model3.0_3.0.1-1_amd64.deb
+#liburdfdom-model3.0_3.0.1-1_amd64.deb
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.py[cod]
+*$py.class
+*.pyo
+*.pyc
