@@ -8,16 +8,14 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <algorithm> // For std::clamp
+#include <random>
 
 class SimulationNode;
 
 class PIDController {
 public:
     PIDController(const pinocchio::Model& model, pinocchio::Data& data, const Eigen::VectorXd& q_desired)
-        : model_(model), data_(data), q_desired_(q_desired), gravity_(Eigen::VectorXd::Zero(model.nv))
-    {
-        pinocchio::computeGeneralizedGravity(model_, data_, q_desired_);
-    }
+        : model_(model), data_(data), q_desired_(q_desired) {}
 
     void setGains(double kp, double ki, double kd) {
         kp_ = kp;
@@ -25,31 +23,38 @@ public:
         kd_ = kd;
     }
 
-    Eigen::VectorXd computeTorques(const Eigen::VectorXd& q, const Eigen::VectorXd& v, const Eigen::VectorXd& a, double dt) {
+    void setDesiredPositions(const Eigen::VectorXd& q_desired) {
+        q_desired_ = q_desired;
+    }
+
+    Eigen::VectorXd computeTorques(const Eigen::VectorXd& q, const Eigen::VectorXd& v, double dt) {
+        // Compute gravity compensation terms
+        pinocchio::computeGeneralizedGravity(model_, data_, q);
+        Eigen::VectorXd gravityCompensationTerms = data_.g;
+
         // Proportional term
         Eigen::VectorXd error = q_desired_ - q;
         Eigen::VectorXd proportional = kp_ * error;
 
         // Integral term
         integral_ += error * dt;
+        integral_ = integral_.cwiseMin(max_integral_).cwiseMax(-max_integral_);
         Eigen::VectorXd integral = ki_ * integral_;
 
         // Derivative term
         Eigen::VectorXd derivative = kd_ * (error - previous_error_) / dt;
+        derivative = derivative.cwiseMin(max_derivative_).cwiseMax(-max_derivative_);
 
         // Update previous error
         previous_error_ = error;
 
-        // Total torque
-        Eigen::VectorXd torque = proportional + integral + derivative;
+        // Total torque with gravity compensation
+        Eigen::VectorXd torque = proportional + integral + derivative + gravityCompensationTerms;
 
         // Clamp the torque to prevent large values
         for (int i = 0; i < torque.size(); ++i) {
             torque[i] = std::clamp(torque[i], -max_torque_, max_torque_);
         }
-
-        // Add gravity compensation
-        torque -= gravity_;
 
         return torque;
     }
@@ -60,14 +65,17 @@ private:
     const pinocchio::Model& model_;
     pinocchio::Data& data_;
     Eigen::VectorXd q_desired_;
-    Eigen::VectorXd gravity_;
     Eigen::VectorXd integral_ = Eigen::VectorXd::Zero(model_.nq);
     Eigen::VectorXd previous_error_ = Eigen::VectorXd::Zero(model_.nv);
 
-    double kp_ = 0.0;  // Proportional gain
-    double ki_ = 0.5;  // Integral gain
-    double kd_ = 17.0;  // Derivative gain
-    double max_torque_ = 10.0; // Maximum allowable torque
+    double kp_ = 3.5;  // Proportional gain
+    double ki_ = 0.0;  // Integral gain
+    double kd_ = 0.0;  // Derivative gain
+    double max_torque_ = 100.0; // Maximum allowable torque
+
+    // Limits for integral and derivative terms
+    Eigen::VectorXd max_integral_ = Eigen::VectorXd::Constant(model_.nq, 100.0);
+    Eigen::VectorXd max_derivative_ = Eigen::VectorXd::Constant(model_.nq, 100.0);
 };
 
 class SimulationNode : public rclcpp::Node {
@@ -97,7 +105,7 @@ public:
         data_ = pinocchio::Data(model_);
 
         // Initialize joint states
-        q_ = Eigen::VectorXd::Zero(model_.nv);
+        q_ = Eigen::VectorXd::Zero(model_.nq);
         v_ = Eigen::VectorXd::Zero(model_.nv);
         a_ = Eigen::VectorXd::Zero(model_.nv);
         tau_ = Eigen::VectorXd::Zero(model_.nv);
@@ -121,7 +129,7 @@ public:
     }
 
     void reset() {
-        q_ = Eigen::VectorXd::Zero(model_.nv);
+        q_ = Eigen::VectorXd::Zero(model_.nq);
         v_ = Eigen::VectorXd::Zero(model_.nv);
         a_ = Eigen::VectorXd::Zero(model_.nv);
         tau_ = Eigen::VectorXd::Zero(model_.nv);
@@ -145,7 +153,7 @@ private:
         tau_ = damping_factor * v_;
 
         // Compute torques from PID controller
-        //tau_ += pid_controller_->computeTorques(q_, v_, Eigen::VectorXd::Zero(model_.nv), dt);
+        tau_ += pid_controller_->computeTorques(q_, v_, dt);
 
         // Compute forward dynamics
         a_ = pinocchio::aba(model_, data_, q_, v_, tau_);
@@ -157,6 +165,13 @@ private:
         // Clamp joint positions within limits
         for (int i = 0; i < q_.size(); ++i) {
             q_[i] = std::clamp(q_[i], model_.lowerPositionLimit[i], model_.upperPositionLimit[i]);
+        }
+
+        // Check for NaN values and reset if found
+        if (q_.hasNaN() || v_.hasNaN() || a_.hasNaN() || tau_.hasNaN()) {
+            RCLCPP_WARN(this->get_logger(), "NaN detected in joint state. Resetting simulation.");
+            reset();
+            return;
         }
 
         // Calculate error metric (MSE)
@@ -214,9 +229,9 @@ void PIDController::optimizeGains(SimulationNode& simulation_node) {
     double best_kp = kp_, best_ki = ki_, best_kd = kd_;
     int iter = 0;
 
-    for (double kp = 0.0; kp < 20.0; kp += 0.5) {
-        for (double ki = 0.0; ki < 20.0; ki += 0.5) {
-            for (double kd = 15.0; kd < 20.0; kd += 0.5) {
+    for (double kp = 0.0; kp < 10.0; kp += 0.5) {
+        for (double ki = 0.0; ki < 10.0; ki += 0.5) {
+            for (double kd = 0.0; kd < 10.0; kd += 0.5) {
                 RCLCPP_INFO(simulation_node.get_logger(), "Iteration: %d / 8000\n\tTesting PID gains: Kp=%f, Ki=%f, Kd=%f", iter++, kp, ki, kd);
                 setGains(kp, ki, kd);
                 simulation_node.reset();  // Reset the simulation state
@@ -245,6 +260,10 @@ void PIDController::optimizeGains(SimulationNode& simulation_node) {
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<SimulationNode>();
+
+    // Set the desired joint positions to something meaningful
+    Eigen::VectorXd q_desired = Eigen::VectorXd::Constant(6, 0.0); // Example desired positions
+    node->getPIDController()->setDesiredPositions(q_desired);
 
     // Run if you want to optimize gains
     //node->getPIDController()->optimizeGains(*node);
