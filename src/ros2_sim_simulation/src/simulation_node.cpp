@@ -8,16 +8,30 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <algorithm> // For std::clamp
-#include <random>
+#include <random>    // For random number generation
 
 class SimulationNode;
 
 class PIDController {
 public:
-    PIDController(const pinocchio::Model& model, pinocchio::Data& data, const Eigen::VectorXd& q_desired)
-        : model_(model), data_(data), q_desired_(q_desired) {}
+    struct PIDGains {
+        Eigen::VectorXd kp;
+        Eigen::VectorXd ki;
+        Eigen::VectorXd kd;
+    };
 
-    void setGains(double kp, double ki, double kd) {
+    PIDController(const pinocchio::Model& model, pinocchio::Data& data, const Eigen::VectorXd& q_desired)
+        : model_(model), data_(data), q_desired_(q_desired) {
+        // Initialize gains for each joint
+        // Set the optimized PID gains for each joint
+        Eigen::VectorXd kp(6), ki(6), kd(6);
+        kp << 1.7688, 6.01637, 7.5294, 7.18778, 5.87989, 4.0;
+        ki << 1.57731, 6.34717, 6.3343, 6.17437, 7.02989, 0.0;
+        kd << 2.57169, 7.9477, 5.98217, 5.26123, 1.61688, 0.0;
+        setGains(kp, ki, kd);
+    }
+
+    void setGains(const Eigen::VectorXd& kp, const Eigen::VectorXd& ki, const Eigen::VectorXd& kd) {
         kp_ = kp;
         ki_ = ki;
         kd_ = kd;
@@ -28,30 +42,23 @@ public:
     }
 
     Eigen::VectorXd computeTorques(const Eigen::VectorXd& q, const Eigen::VectorXd& v, double dt) {
-        // Compute gravity compensation terms
         pinocchio::computeGeneralizedGravity(model_, data_, q);
         Eigen::VectorXd gravityCompensationTerms = data_.g;
 
-        // Proportional term
         Eigen::VectorXd error = q_desired_ - q;
-        Eigen::VectorXd proportional = kp_ * error;
+        Eigen::VectorXd proportional = kp_.array() * error.array();
 
-        // Integral term
         integral_ += error * dt;
         integral_ = integral_.cwiseMin(max_integral_).cwiseMax(-max_integral_);
-        Eigen::VectorXd integral = ki_ * integral_;
+        Eigen::VectorXd integral = ki_.array() * integral_.array();
 
-        // Derivative term
-        Eigen::VectorXd derivative = kd_ * (error - previous_error_) / dt;
+        Eigen::VectorXd derivative = kd_.array() * ((error - previous_error_).array() / dt);
         derivative = derivative.cwiseMin(max_derivative_).cwiseMax(-max_derivative_);
 
-        // Update previous error
         previous_error_ = error;
 
-        // Total torque with gravity compensation
         Eigen::VectorXd torque = proportional + integral + derivative + gravityCompensationTerms;
 
-        // Clamp the torque to prevent large values
         for (int i = 0; i < torque.size(); ++i) {
             torque[i] = std::clamp(torque[i], -max_torque_, max_torque_);
         }
@@ -68,58 +75,65 @@ private:
     Eigen::VectorXd integral_ = Eigen::VectorXd::Zero(model_.nq);
     Eigen::VectorXd previous_error_ = Eigen::VectorXd::Zero(model_.nv);
 
-    double kp_ = 3.5;  // Proportional gain
-    double ki_ = 0.0;  // Integral gain
-    double kd_ = 0.0;  // Derivative gain
-    double max_torque_ = 100.0; // Maximum allowable torque
+    Eigen::VectorXd kp_;
+    Eigen::VectorXd ki_;
+    Eigen::VectorXd kd_;
+    double max_torque_ = 100.0;
 
-    // Limits for integral and derivative terms
     Eigen::VectorXd max_integral_ = Eigen::VectorXd::Constant(model_.nq, 100.0);
     Eigen::VectorXd max_derivative_ = Eigen::VectorXd::Constant(model_.nq, 100.0);
+
+    void initializeGains() {
+        std::default_random_engine re;
+        std::uniform_real_distribution<double> unif(0.0, 10.0);
+
+        kp_ = Eigen::VectorXd::Zero(model_.nq);
+        ki_ = Eigen::VectorXd::Zero(model_.nq);
+        kd_ = Eigen::VectorXd::Zero(model_.nq);
+
+        for (int i = 0; i < model_.nq; ++i) {
+            kp_[i] = unif(re);
+            ki_[i] = unif(re);
+            kd_[i] = unif(re);
+        }
+    }
+
+    double evaluateFitness(SimulationNode& simulation_node, const PIDGains& gains);
+    std::vector<PIDGains> generateInitialPopulation(int population_size);
+    PIDGains crossover(const PIDGains& parent1, const PIDGains& parent2);
+    void mutate(PIDGains& individual);
 };
 
 class SimulationNode : public rclcpp::Node {
 public:
     SimulationNode() : Node("ros2_sim_simulation_node") {
-        // Declare parameters
-        declare_parameter("urdf_path", "/home/ws/src/ros2_sim_ur3_description/urdf/robot.urdf");
-        declare_parameter("damping_factor", 0.1);
-        declare_parameter("dt", 0.01);
+        declare_parameter("urdf_path", "");
+        get_parameter("urdf_path", urdf_path);
+
+        dt = 0.001;
+        damping_factor = -0.01;
 
         error_metric_ = 0.0;
         simulation_steps_ = 0;
 
-        // Get parameters
-        urdf_path = get_parameter("urdf_path").as_string();
-        damping_factor = get_parameter("damping_factor").as_double();
-        dt = get_parameter("dt").as_double();
-
-        RCLCPP_INFO(this->get_logger(), "URDF path: %s", urdf_path.c_str());
-        RCLCPP_INFO(this->get_logger(), "damping factor: %f", damping_factor);
-        RCLCPP_INFO(this->get_logger(), "Time step (dt): %f", dt);
-
         publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 
-        // Load the URDF model
         pinocchio::urdf::buildModel(urdf_path, model_);
         data_ = pinocchio::Data(model_);
 
-        // Initialize joint states
         q_ = Eigen::VectorXd::Zero(model_.nq);
         v_ = Eigen::VectorXd::Zero(model_.nv);
         a_ = Eigen::VectorXd::Zero(model_.nv);
         tau_ = Eigen::VectorXd::Zero(model_.nv);
 
-        // Extract joint names
-        joint_names_.reserve(model_.njoints - 1);  // excluding the universe joint
+        joint_names_.reserve(model_.njoints - 1);
         for (size_t i = 1; i < model_.names.size(); ++i) {
             if (model_.names[i].find("joint") != std::string::npos) {
                 joint_names_.push_back(model_.names[i]);
             }
         }
 
-        // Initialize PID controller with desired joint positions
-        q_desired_ = Eigen::VectorXd::Zero(model_.nq);  // Initialize with zero position or a realistic initial position
+        q_desired_ = Eigen::VectorXd::Zero(model_.nq);
         pid_controller_ = std::make_unique<PIDController>(model_, data_, q_desired_);
 
         timer_ = this->create_wall_timer(
@@ -149,37 +163,26 @@ private:
     void update() {
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        // Apply damping
         tau_ = damping_factor * v_;
-
-        // Compute torques from PID controller
         tau_ += pid_controller_->computeTorques(q_, v_, dt);
-
-        // Compute forward dynamics
         a_ = pinocchio::aba(model_, data_, q_, v_, tau_);
-
-        // Integrate to get new velocity and position
         v_ += a_ * dt;
         q_ = pinocchio::integrate(model_, q_, v_ * dt);
 
-        // Clamp joint positions within limits
         for (int i = 0; i < q_.size(); ++i) {
             q_[i] = std::clamp(q_[i], model_.lowerPositionLimit[i], model_.upperPositionLimit[i]);
         }
 
-        // Check for NaN values and reset if found
         if (q_.hasNaN() || v_.hasNaN() || a_.hasNaN() || tau_.hasNaN()) {
             RCLCPP_WARN(this->get_logger(), "NaN detected in joint state. Resetting simulation.");
             reset();
             return;
         }
 
-        // Calculate error metric (MSE)
         Eigen::VectorXd error = q_desired_ - q_;
         error_metric_ += error.squaredNorm();
         simulation_steps_++;
 
-        // Publish joint states
         sensor_msgs::msg::JointState joint_state;
         joint_state.header.stamp = this->get_clock()->now();
         joint_state.name = joint_names_;
@@ -214,58 +217,148 @@ private:
     double dt;
     double damping_factor;
 
-    // PID controller
     std::unique_ptr<PIDController> pid_controller_;
     Eigen::VectorXd q_desired_;
 
-    // Maximum allowable acceleration
-    double max_acceleration_ = 10.0; // Adjust based on your robot's capabilities
+    double max_acceleration_ = 10.0;
 
     friend class PIDController;
 };
 
-void PIDController::optimizeGains(SimulationNode& simulation_node) {
-    double best_error = std::numeric_limits<double>::max();
-    double best_kp = kp_, best_ki = ki_, best_kd = kd_;
-    int iter = 0;
+double PIDController::evaluateFitness(SimulationNode& simulation_node, const PIDGains& gains) {
+    setGains(gains.kp, gains.ki, gains.kd);
+    simulation_node.reset();
 
-    for (double kp = 0.0; kp < 10.0; kp += 0.5) {
-        for (double ki = 0.0; ki < 10.0; ki += 0.5) {
-            for (double kd = 0.0; kd < 10.0; kd += 0.5) {
-                RCLCPP_INFO(simulation_node.get_logger(), "Iteration: %d / 8000\n\tTesting PID gains: Kp=%f, Ki=%f, Kd=%f", iter++, kp, ki, kd);
-                setGains(kp, ki, kd);
-                simulation_node.reset();  // Reset the simulation state
-
-                // Run the simulation for a predefined number of steps
-                for (int i = 0; i < 800; ++i) {
-                    simulation_node.update();
-                }
-
-                double error = simulation_node.getErrorMetric();
-                if (error < best_error) {
-                    best_error = error;
-                    best_kp = kp;
-                    best_ki = ki;
-                    best_kd = kd;
-                }
-                RCLCPP_INFO(simulation_node.get_logger(), "Current best PID gains: Kp=%f, Ki=%f, Kd=%f with error=%f", best_kp, best_ki, best_kd, best_error);
-            }
-        }
+    for (int i = 0; i < 1200; ++i) {
+        simulation_node.update();
     }
 
-    RCLCPP_INFO(simulation_node.get_logger(), "Finished testing gains. Best PID gains: Kp=%f, Ki=%f, Kd=%f with error=%f", best_kp, best_ki, best_kd, best_error);
-    setGains(best_kp, best_ki, best_kd);
+    return simulation_node.getErrorMetric();
+}
+
+std::vector<PIDController::PIDGains> PIDController::generateInitialPopulation(int population_size) {
+    std::vector<PIDGains> population;
+    std::default_random_engine re;
+    std::uniform_real_distribution<double> unif(0.0, 10.0);
+
+    for (int i = 0; i < population_size; ++i) {
+        PIDGains gains;
+        gains.kp = Eigen::VectorXd::Zero(model_.nq);
+        gains.ki = Eigen::VectorXd::Zero(model_.nq);
+        gains.kd = Eigen::VectorXd::Zero(model_.nq);
+
+        for (int j = 0; j < model_.nq; ++j) {
+            gains.kp[j] = unif(re);
+            gains.ki[j] = unif(re);
+            gains.kd[j] = unif(re);
+        }
+
+        population.push_back(gains);
+    }
+
+    return population;
+}
+
+PIDController::PIDGains PIDController::crossover(const PIDGains& parent1, const PIDGains& parent2) {
+    PIDGains child;
+    child.kp = (parent1.kp + parent2.kp) / 2.0;
+    child.ki = (parent1.ki + parent2.ki) / 2.0;
+    child.kd = (parent1.kd + parent2.kd) / 2.0;
+
+    return child;
+}
+
+void PIDController::mutate(PIDGains& individual) {
+    std::default_random_engine re;
+    std::uniform_real_distribution<double> dis(0.0, 1.0);
+
+    if (dis(re) < 0.1) {
+        std::uniform_real_distribution<double> mutation_dis(-1.0, 1.0);
+
+        for (int i = 0; i < model_.nq; ++i) {
+            individual.kp[i] += mutation_dis(re);
+            individual.ki[i] += mutation_dis(re);
+            individual.kd[i] += mutation_dis(re);
+
+            individual.kp[i] = std::max(0.0, std::min(10.0, individual.kp[i]));
+            individual.ki[i] = std::max(0.0, std::min(10.0, individual.ki[i]));
+            individual.kd[i] = std::max(0.0, std::min(10.0, individual.kd[i]));
+        }
+    }
+}
+
+void PIDController::optimizeGains(SimulationNode& simulation_node) {
+    const int population_size = 20;
+    const int generations = 50;
+    const double elite_fraction = 0.2;
+
+    initializeGains();
+
+    auto population = generateInitialPopulation(population_size);
+    std::vector<double> fitness(population_size);
+
+    for (int generation = 0; generation < generations; ++generation) {
+        for (int i = 0; i < population_size; ++i) {
+            fitness[i] = evaluateFitness(simulation_node, population[i]);
+        }
+
+        std::vector<std::pair<double, PIDGains>> fitness_population;
+        for (int i = 0; i < population_size; ++i) {
+            fitness_population.push_back({fitness[i], population[i]});
+        }
+
+        std::sort(fitness_population.begin(), fitness_population.end(),
+                  [](const std::pair<double, PIDGains>& a, const std::pair<double, PIDGains>& b) {
+                      return a.first < b.first;
+                  });
+
+        int elite_count = static_cast<int>(elite_fraction * population_size);
+        std::vector<PIDGains> new_population;
+        for (int i = 0; i < elite_count; ++i) {
+            new_population.push_back(fitness_population[i].second);
+        }
+
+        std::default_random_engine re;
+        std::uniform_int_distribution<int> dis(0, elite_count - 1);
+
+        while (new_population.size() < population_size) {
+            PIDGains parent1 = fitness_population[dis(re)].second;
+            PIDGains parent2 = fitness_population[dis(re)].second;
+            PIDGains child = crossover(parent1, parent2);
+            mutate(child);
+            new_population.push_back(child);
+        }
+
+        population = new_population;
+
+        // Logging gains for the best individual of the current generation
+        PIDGains best_gains = fitness_population[0].second;
+        std::stringstream kp_stream, ki_stream, kd_stream;
+        kp_stream << best_gains.kp.transpose().format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]"));
+        ki_stream << best_gains.ki.transpose().format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]"));
+        kd_stream << best_gains.kd.transpose().format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]"));
+
+        RCLCPP_INFO(simulation_node.get_logger(), "Generation %d: Best fitness = %f, Best gains: Kp=%s, Ki=%s, Kd=%s", generation, fitness_population[0].first, kp_stream.str().c_str(), ki_stream.str().c_str(), kd_stream.str().c_str());
+    }
+
+    // Final best gains after optimization
+    PIDGains best_gains = population[0];
+    setGains(best_gains.kp, best_gains.ki, best_gains.kd);
+
+    std::stringstream kp_stream, ki_stream, kd_stream;
+    kp_stream << best_gains.kp.transpose().format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]"));
+    ki_stream << best_gains.ki.transpose().format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]"));
+    kd_stream << best_gains.kd.transpose().format(Eigen::IOFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]"));
+
+    RCLCPP_INFO(simulation_node.get_logger(), "Optimized PID gains: Kp=%s, Ki=%s, Kd=%s", kp_stream.str().c_str(), ki_stream.str().c_str(), kd_stream.str().c_str());
 }
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<SimulationNode>();
 
-    // Set the desired joint positions to something meaningful
-    Eigen::VectorXd q_desired = Eigen::VectorXd::Constant(6, 0.0); // Example desired positions
+    Eigen::VectorXd q_desired = Eigen::VectorXd::Constant(6, 0.2);
     node->getPIDController()->setDesiredPositions(q_desired);
-
-    // Run if you want to optimize gains
     //node->getPIDController()->optimizeGains(*node);
 
     rclcpp::spin(node);
