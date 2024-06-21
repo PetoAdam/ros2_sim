@@ -1,0 +1,7 @@
+ros2_sim_pid_controller_node:
+  ros__parameters:
+    urdf_path: "/home/ws/src/ros2_sim_ur3_description/urdf/robot.urdf"
+    kp: [0.8, 0.8, 0.8, 0.3, 0.3, 0.3]
+    ki: [0.3, 0.3, 0.3, 0.1, 0.1, 0.1]
+    kd: [1.2, 1.2, 1.2, 0.2, 0.1, 0.1]
+    dt: 0.005

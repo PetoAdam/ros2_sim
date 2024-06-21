@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ros2_sim_simulation)
+project(ros2_sim_pid_controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -34,7 +34,7 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
-add_executable(${PROJECT_NAME}_node src/simulation_node.cpp)
+add_executable(${PROJECT_NAME}_node src/pid_controller_node.cpp)
 ament_target_dependencies(${PROJECT_NAME}_node rclcpp sensor_msgs urdf pinocchio yaml-cpp)
 
 target_link_libraries(${PROJECT_NAME}_node ${pinocchio_LIBRARIES} ${YAML_CPP_LIBRARIES})
