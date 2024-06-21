@@ -3,6 +3,8 @@ install
 log
 build
 
+#src/ros2_sim_control/controller
+
 # This might not be correctly installed by the devcontainer, so manual installation might be neccessary
 # sudo apt install ./liburdfdom-model3.0_3.0.1-1_amd64.deb
 #liburdfdom-model3.0_3.0.1-1_amd64.deb

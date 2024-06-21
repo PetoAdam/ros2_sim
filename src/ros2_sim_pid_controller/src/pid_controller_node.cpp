@@ -41,7 +41,7 @@ PIDControllerNode::PIDControllerNode() : Node("pid_controller_node") {
     joint_state_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
         "joint_states", 0, std::bind(&PIDControllerNode::jointStateCallback, this, std::placeholders::_1));
     desired_positions_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
-        "desired_positions", 10, std::bind(&PIDControllerNode::setDesiredPositionsCallback, this, std::placeholders::_1));
+        "desired_positions", 0, std::bind(&PIDControllerNode::setDesiredPositionsCallback, this, std::placeholders::_1));
 
     timer_ = create_wall_timer(std::chrono::milliseconds(static_cast<int>(dt_ * 1000)), std::bind(&PIDControllerNode::update, this));
 }

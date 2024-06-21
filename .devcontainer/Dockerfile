@@ -19,7 +19,10 @@ ENV SHELL /bin/bash
 # Set up apt dependencies for ros2 packages
 RUN apt-get install -y ros-$ROS_DISTRO-rviz2 ros-$ROS_DISTRO-robot-state-publisher \
     ros-$ROS_DISTRO-joint-state-publisher ros-$ROS_DISTRO-rqt-graph \
-    ros-$ROS_DISTRO-joint-state-publisher-gui
+    ros-$ROS_DISTRO-joint-state-publisher-gui ros-$ROS_DISTRO-hardware-interface \
+    ros-$ROS_DISTRO-controller-interface ros-$ROS_DISTRO-realtime-tools \
+    ros-$ROS_DISTRO-controller-manager ros-$ROS_DISTRO-xacro \
+    ros-$ROS_DISTRO-joint-trajectory-controller ros-$ROS_DISTRO-joint-state-broadcaster
 
 ######################
 # OTHER DEPENDENCIES #

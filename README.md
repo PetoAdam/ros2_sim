@@ -9,6 +9,7 @@ This repository contains a ROS2 package for simulating and visualizing a UR3 rob
   - [Launching the Simulation](#launching-the-simulation)
   - [Visualizing with RViz2](#visualizing-with-rviz2)
   - [PID control](#pid-controller)
+  - [ROS 2 Control](#ros-2-control-integration)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -86,6 +87,20 @@ ros2 topic pub /desired_positions sensor_msgs/msg/JointState "{header: {stamp: {
 ```
 
 This command sends the joints to [0.2, 0.2, 0.0, 0.0, 0.0, 0.0].
+
+## ROS 2 Control Integration
+
+The project also comes with its own ros2_control integration, which converts trajectory data to joint positions, which are sent towards the PID controller.
+
+```bash
+ros2 launch src/ros2_sim_control/bringup/launch/ros2_sim_control.launch.py 
+```
+
+It can be tested via supplying it this demo trajectory:
+
+```bash
+ros2 topic pub /robot_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: base_link}, joint_names: ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint'], points: [{positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 0, nanosec: 0}}, {positions: [0.2, 0.2, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 3, nanosec: 0}}, {positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 6, nanosec: 0}}]}"
+```
 
 
 # Contributing
