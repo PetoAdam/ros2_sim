@@ -62,7 +62,7 @@ void PIDControllerNode::jointStateCallback(const sensor_msgs::msg::JointState::S
 
         std::cout << "Q: " << std::endl << q << std::endl << "Q desired: " << std::endl << q_desired_ << std::endl << "Error: " << std::endl << error << std::endl;
 
-        integral_ += error * dt_;
+        integral_ = error * dt_;
         integral_ = integral_.cwiseMin(max_integral_).cwiseMax(-max_integral_);
         Eigen::VectorXd integral = ki_.array() * integral_.array();
 
