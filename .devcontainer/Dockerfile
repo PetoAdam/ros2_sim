@@ -24,6 +24,19 @@ RUN apt-get install -y ros-$ROS_DISTRO-rviz2 ros-$ROS_DISTRO-robot-state-publish
     ros-$ROS_DISTRO-controller-manager ros-$ROS_DISTRO-xacro \
     ros-$ROS_DISTRO-joint-trajectory-controller ros-$ROS_DISTRO-joint-state-broadcaster
 
+# Set up dependencies for moveit (ros-$ROS_DISTRO-moveit currently not working)
+RUN apt-get install -y ros-$ROS_DISTRO-moveit-core \
+    ros-$ROS_DISTRO-moveit-planners \
+    ros-$ROS_DISTRO-moveit-plugins \
+    ros-$ROS_DISTRO-moveit-ros-planning \
+    ros-$ROS_DISTRO-moveit-ros-warehouse \
+    ros-$ROS_DISTRO-moveit-ros-robot-interaction \
+    ros-$ROS_DISTRO-moveit-ros-planning-interface \
+    ros-$ROS_DISTRO-moveit-ros-visualization \
+    ros-$ROS_DISTRO-moveit-ros-move-group \
+    ros-$ROS_DISTRO-moveit-setup-assistant \
+    ros-$ROS_DISTRO-moveit-planners-chomp
+
 ######################
 # OTHER DEPENDENCIES #
 ######################

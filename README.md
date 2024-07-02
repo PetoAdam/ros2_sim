@@ -10,6 +10,7 @@ This repository contains a ROS2 package for simulating and visualizing a UR3 rob
   - [Visualizing with RViz2](#visualizing-with-rviz2)
   - [PID control](#pid-controller)
   - [ROS 2 Control](#ros-2-control-integration)
+  - [Moveit Integration](#moveit-integration)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -99,8 +100,27 @@ ros2 launch src/ros2_sim_control/bringup/launch/ros2_sim_control.launch.py
 It can be tested via supplying it this demo trajectory:
 
 ```bash
-ros2 topic pub /robot_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: base_link}, joint_names: ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint'], points: [{positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 0, nanosec: 0}}, {positions: [0.8, 0.8, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 3, nanosec: 0}}, {positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 6, nanosec: 0}}]}" --once
+ros2 topic pub /robot_arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: base_link}, joint_names: ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint'], points: [{positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 0, nanosec: 0}}, {positions: [0.8, 0.8, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 3, nanosec: 0}}, {positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 6, nanosec: 0}}]}" --once
 ```
+
+## MoveIt Integration
+
+This project utilizes MoveIt2 for motion planning. To enable motion planning and execute planned trajectories, follow these steps:
+
+The motion planner UI runs in RViz, so a new visualization windows has to be started instead of the command provided before:
+
+```bash
+ros2 launch src/ros2_sim_ur3_description/launch/planner.launch.py
+```
+
+To launch the motion planner, run:
+
+```bash
+ros2 launch ros2_sim_moveit_config move_group.launch.py
+```
+
+Planning and executing trajectories can be done via the MotionPlanning window inside RViz:
+![rviz.png](resources/images/rviz.png)
 
 
 # Contributing
