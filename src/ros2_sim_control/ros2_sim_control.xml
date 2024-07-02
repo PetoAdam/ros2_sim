@@ -1,0 +1,9 @@
+<library path="ros2_sim_control">
+  <class name="ros2_sim_control/RobotSystem"
+         type="ros2_sim_control::RobotSystem"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Robot hardware plugin for 6 dof robot.
+    </description>
+  </class>
+</library>

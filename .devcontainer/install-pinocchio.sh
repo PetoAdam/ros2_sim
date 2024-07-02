@@ -10,7 +10,7 @@ curl http://robotpkg.openrobots.org/packages/debian/robotpkg.asc \
      | sudo tee /etc/apt/keyrings/robotpkg.asc
 
 # Force using 'jammy' repository for Ubuntu 24.04
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/robotpkg.asc] http://robotpkg.openrobots.org/packages/debian/pub jammy robotpkg" \
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/robotpkg.asc] http://robotpkg.openrobots.org/packages/debian/pub noble robotpkg" \
      | sudo tee /etc/apt/sources.list.d/robotpkg.list
 
 # Run apt update to fetch package descriptions

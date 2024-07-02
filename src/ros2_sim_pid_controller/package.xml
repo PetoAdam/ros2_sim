@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ros2_sim_simulation</name>
+  <name>ros2_sim_pid_controller</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="peto.adam@yahoo.com">Adam Peto</maintainer>
@@ -11,8 +11,11 @@
 
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
-  <depend>visualization_msgs</depend>
+  <depend>pinocchio</depend>
+  <depend>Eigen3</depend>
+  <depend>yaml-cpp</depend>
   <depend>urdf</depend>
+  <depend>visualization_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

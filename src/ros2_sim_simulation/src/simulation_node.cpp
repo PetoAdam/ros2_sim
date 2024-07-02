@@ -1,114 +1,113 @@
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
-#include <pinocchio/algorithm/aba.hpp>
-#include <pinocchio/algorithm/joint-configuration.hpp>
-#include <pinocchio/parsers/urdf.hpp>
-#include <pinocchio/utils/timer.hpp>
-#include <yaml-cpp/yaml.h>
-#include <Eigen/Dense>
-#include <fstream>
-#include <algorithm>
-#include <chrono>
-#include <thread>
+#include "ros2_sim_simulation/simulation_node.hpp"
 
-class SimulationNode : public rclcpp::Node {
-public:
-    SimulationNode() : Node("ros2_sim_simulation_node") {
+SimulationNode::SimulationNode() : Node("ros2_sim_simulation_node") {
+    // Declare and get parameters
+    declare_parameter("urdf_path", "");
+    declare_parameter("dt", 0.005);
+    declare_parameter("damping_factor", -0.01);
 
-        // Declare parameters (actually does not matter what we initialize inside them)
-        declare_parameter("urdf_path", "/home/ws/src/ros2_sim_ur3_description/urdf/robot.urdf");
-        declare_parameter("damping_factor", 0.0);
-        declare_parameter("dt", 0.0);
+    get_parameter("urdf_path", urdf_path_);
+    get_parameter("dt", dt_);
+    get_parameter("damping_factor", damping_factor_);
 
-        // Get parameters from the config file
-        urdf_path = get_parameter("urdf_path").as_string();
-        damping_factor = get_parameter("damping_factor").as_double();
-        dt = get_parameter("dt").as_double();
+    simulation_steps_ = 0;
 
-        RCLCPP_INFO(this->get_logger(), "URDF path: %s", urdf_path.c_str());
-        RCLCPP_INFO(this->get_logger(), "damping factor: %f", damping_factor);
-        RCLCPP_INFO(this->get_logger(), "Time step (dt): %f", dt);
+    publisher_ = create_publisher<sensor_msgs::msg::JointState>("joint_states", 0);
+    torque_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
+        "torques", 0, std::bind(&SimulationNode::torqueCallback, this, std::placeholders::_1));
 
-        publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+    pinocchio::urdf::buildModel(urdf_path_, model_);
+    data_ = pinocchio::Data(model_);
 
-        // Load the URDF model
-        pinocchio::urdf::buildModel(urdf_path, model);
-        data = pinocchio::Data(model);
+    q_ = Eigen::VectorXd::Zero(model_.nq);
+    v_ = Eigen::VectorXd::Zero(model_.nv);
+    a_ = Eigen::VectorXd::Zero(model_.nv);
+    tau_ = Eigen::VectorXd::Zero(model_.nv);
+    external_tau_ = Eigen::VectorXd::Zero(model_.nv);
 
-        // Initialize joint states
-        q = Eigen::VectorXd::Zero(model.nq);
-        v = Eigen::VectorXd::Zero(model.nv);
-        tau = Eigen::VectorXd::Zero(model.nv);
-
-        // Extract actual joint names
-        joint_names.reserve(model.njoints - 1);  // excluding the universe joint
-        for (size_t i = 1; i < model.names.size(); ++i) {
-            if (model.names[i].find("joint") != std::string::npos) {
-                joint_names.push_back(model.names[i]);
-            }
-        }
-
-        timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(static_cast<int>(dt * 1000)),
-            std::bind(&SimulationNode::update, this)
-        );
-    }
-
-private:
-    void update() {
-        auto start_time = std::chrono::high_resolution_clock::now();
-
-        // Apply damping
-        tau += damping_factor * v;
-
-        // Compute forward dynamics
-        Eigen::VectorXd a = pinocchio::aba(model, data, q, v, tau);
-
-        // Integrate to get new velocity and position
-        v += a * dt;
-        q = pinocchio::integrate(model, q, v * dt);
-
-        // Clamp joint positions within limits
-        for (int i = 0; i < q.size(); ++i) {
-            q[i] = std::clamp(q[i], model.lowerPositionLimit[i], model.upperPositionLimit[i]);
-        }
-
-        // Publish joint states
-        sensor_msgs::msg::JointState joint_state;
-        joint_state.header.stamp = this->get_clock()->now();
-        joint_state.name = joint_names;
-        joint_state.position = std::vector<double>(q.data(), q.data() + q.size());
-        joint_state.velocity = std::vector<double>(v.data(), v.data() + v.size());
-        joint_state.effort.resize(v.size(), 0.0); // Assuming zero effort for simplicity
-
-        publisher_->publish(joint_state);
-
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-        auto sleep_time = std::chrono::milliseconds(static_cast<int>(dt * 1000)) - std::chrono::milliseconds(elapsed_time);
-
-        if (sleep_time.count() > 0) {
-            std::this_thread::sleep_for(sleep_time);
+    joint_names_.reserve(model_.njoints - 1);
+    for (size_t i = 1; i < model_.names.size(); ++i) {
+        if (model_.names[i].find("joint") != std::string::npos) {
+            joint_names_.push_back(model_.names[i]);
         }
     }
 
-    std::string urdf_path;
+    q_desired_ = Eigen::VectorXd::Zero(model_.nq);
 
-    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr publisher_;
-    rclcpp::TimerBase::SharedPtr timer_;
+    timer_ = create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(dt_ * 1000)), std::bind(&SimulationNode::update, this));
+}
 
-    pinocchio::Model model;
-    pinocchio::Data data;
-    std::vector<std::string> joint_names;
+void SimulationNode::reset() {
+    q_ = Eigen::VectorXd::Zero(model_.nq);
+    v_ = Eigen::VectorXd::Zero(model_.nv);
+    a_ = Eigen::VectorXd::Zero(model_.nv);
+    tau_ = Eigen::VectorXd::Zero(model_.nv);
+    external_tau_ = Eigen::VectorXd::Zero(model_.nv);
 
-    Eigen::VectorXd q, v, tau;
-    double dt;
-    double damping_factor;
-};
+    simulation_steps_ = 0;
+}
+
+void SimulationNode::update() {
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    // Apply damping
+    tau_ = damping_factor_ * v_;
+
+    // Add external torque from PID controller
+    tau_ += external_tau_;
+
+    // Update the robot's state based on the current torques and dynamics
+    a_ = pinocchio::aba(model_, data_, q_, v_, tau_);
+    v_ += a_ * dt_;
+    q_ = pinocchio::integrate(model_, q_, v_ * dt_);
+
+    for (int i = 0; i < q_.size(); ++i) {
+            q_[i] = std::clamp(q_[i], model_.lowerPositionLimit[i], model_.upperPositionLimit[i]);
+    }
+
+    if (q_.hasNaN() || v_.hasNaN() || a_.hasNaN() || tau_.hasNaN()) {
+        RCLCPP_WARN(this->get_logger(), "NaN detected in joint state. Resetting simulation.");
+        reset();
+        return;
+    }
+
+    // Publish the updated joint states
+    auto joint_state_msg = sensor_msgs::msg::JointState();
+    joint_state_msg.header.stamp = now();
+    joint_state_msg.name = joint_names_;
+    joint_state_msg.position.resize(q_.size());
+    joint_state_msg.velocity.resize(v_.size());
+
+    Eigen::VectorXd::Map(&joint_state_msg.position[0], q_.size()) = q_;
+    Eigen::VectorXd::Map(&joint_state_msg.velocity[0], v_.size()) = v_;
+
+    publisher_->publish(joint_state_msg);
+
+    // Increment simulation step count
+    simulation_steps_++;
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    auto sleep_time = std::chrono::milliseconds(static_cast<int>(dt_ * 1000)) - std::chrono::milliseconds(elapsed_time);
+
+    if (sleep_time.count() > 0) {
+        std::this_thread::sleep_for(sleep_time);
+    }
+}
+
+void SimulationNode::torqueCallback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+    // Handle incoming torques
+    if (msg->effort.size() == static_cast<size_t>(external_tau_.size())) {
+        Eigen::VectorXd::Map(&external_tau_[0], external_tau_.size()) = Eigen::VectorXd::Map(msg->effort.data(), msg->effort.size());
+    }
+}
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<SimulationNode>());
+    auto node = std::make_shared<SimulationNode>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }
