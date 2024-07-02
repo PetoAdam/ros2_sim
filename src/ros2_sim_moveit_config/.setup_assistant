@@ -1,0 +1,23 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: ros2_sim_control
+    relative_path: urdf/robot.urdf
+  srdf:
+    relative_path: config/ur3.srdf
+  package_settings:
+    author_name: Adam Peto
+    author_email: peto.adam@yahoo.com
+    generated_timestamp: 1719924548
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
