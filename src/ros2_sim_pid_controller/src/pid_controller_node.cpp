@@ -60,7 +60,8 @@ void PIDControllerNode::jointStateCallback(const sensor_msgs::msg::JointState::S
         Eigen::VectorXd error = q_desired_ - q;
         Eigen::VectorXd proportional = kp_.array() * error.array();
 
-        std::cout << "Q: " << std::endl << q << std::endl << "Q desired: " << std::endl << q_desired_ << std::endl << "Error: " << std::endl << error << std::endl;
+        // Optional logging
+        //std::cout << "Q: " << std::endl << q << std::endl << "Q desired: " << std::endl << q_desired_ << std::endl << "Error: " << std::endl << error << std::endl;
 
         integral_ = error * dt_;
         integral_ = integral_.cwiseMin(max_integral_).cwiseMax(-max_integral_);
@@ -85,9 +86,10 @@ void PIDControllerNode::jointStateCallback(const sensor_msgs::msg::JointState::S
         torque_msg.effort.resize(torques.size());
         Eigen::VectorXd::Map(&torque_msg.effort[0], torques.size()) = torques;
 
-        Eigen::IOFormat TorqueFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "[", "]");
-        std::stringstream torque_stream;
-        torque_stream << "Publishing torques: [" << torques.format(TorqueFormat) << "]";
+        // Optionally log command torques
+        //Eigen::IOFormat TorqueFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "[", "]");
+        //std::stringstream torque_stream;
+        //torque_stream << "Publishing torques: [" << torques.format(TorqueFormat) << "]";
         //RCLCPP_INFO(this->get_logger(), "%s", torque_stream.str().c_str());
 
         torque_publisher_->publish(torque_msg);
@@ -101,10 +103,12 @@ void PIDControllerNode::setDesiredPositionsCallback(const sensor_msgs::msg::Join
     // Handle setting desired positions
     if (msg->position.size() == static_cast<size_t>(model_.nq)) {
         q_desired_ = Eigen::VectorXd::Map(msg->position.data(), msg->position.size());
-        Eigen::IOFormat PositionFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "[", "]");
-        std::stringstream position_stream;
-        position_stream << "Setting desired positions: [" << q_desired_.format(PositionFormat) << "]";
-        RCLCPP_INFO(this->get_logger(), "%s", position_stream.str().c_str());
+
+        // Optionally log desired joint positions
+        //Eigen::IOFormat PositionFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "[", "]");
+        //std::stringstream position_stream;
+        //position_stream << "Setting desired positions: [" << q_desired_.format(PositionFormat) << "]";
+        //RCLCPP_INFO(this->get_logger(), "%s", position_stream.str().c_str());
 
     } else {
         RCLCPP_WARN(this->get_logger(), "Received desired positions with mismatched size");
