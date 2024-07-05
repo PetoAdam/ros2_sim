@@ -55,6 +55,19 @@ source install/setup.bash
 
 # Usage
 
+## Preset launch configurations
+
+There are preset launch configurations that can be easily run without having to open multiple terminals for every package. Current presets:
+ - launch_all_with_rviz.sh: This shell script runs the simulation, the PID controller, the ros2_control, the MoveIt and the RViz Visualization (with Motion Planning enabled) packages with their correct launch files.
+
+ To run it, makes sure to build and source the workspace and then run:
+
+ ```bash
+./launch_all_with_rviz.sh
+ ```
+
+ from the root directory of the repository.
+
 ## Launching the simulation
 
 To start the simulation, use the following command inside the devcontainer after making sure the workspace was built and sourced:
