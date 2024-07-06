@@ -35,7 +35,8 @@ RUN apt-get install -y ros-$ROS_DISTRO-moveit-core \
     ros-$ROS_DISTRO-moveit-ros-visualization \
     ros-$ROS_DISTRO-moveit-ros-move-group \
     ros-$ROS_DISTRO-moveit-setup-assistant \
-    ros-$ROS_DISTRO-moveit-planners-chomp
+    ros-$ROS_DISTRO-moveit-planners-chomp \
+    ros-$ROS_DISTRO-moveit-visual-tools
 
 ######################
 # OTHER DEPENDENCIES #

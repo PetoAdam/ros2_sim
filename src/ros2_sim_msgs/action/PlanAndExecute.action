@@ -1,0 +1,14 @@
+# Goal definition
+geometry_msgs/Pose target_pose
+string planning_pipeline
+string planner_id
+float32 timeout
+
+---
+# Result definition
+bool success
+string message
+
+---
+# Feedback definition
+string progress
