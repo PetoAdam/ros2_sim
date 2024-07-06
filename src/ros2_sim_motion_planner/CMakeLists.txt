@@ -63,7 +63,7 @@ install(TARGETS motion_planner_tester_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch config
+install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 

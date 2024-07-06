@@ -43,16 +43,21 @@ Ensure you have the following installed on your system:
 
 ### Building the Package
 
-Once inside the devcontainer, build the package:
+Once inside the devcontainer, first build the ros2_sim_msgs package:
 
 ```bash
 cd ~/home/ws
-colcon build
+colcon build --packages-select ros2_sim_msgs
 ```
 
 Source the workspace
 ```bash
 source install/setup.bash
+```
+
+And then build all the packages:
+```bash
+colcon build
 ```
 
 # Usage
