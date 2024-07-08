@@ -36,16 +36,12 @@ RUN apt-get install -y ros-$ROS_DISTRO-moveit-core \
     ros-$ROS_DISTRO-moveit-ros-move-group \
     ros-$ROS_DISTRO-moveit-setup-assistant \
     ros-$ROS_DISTRO-moveit-planners-chomp \
-    ros-$ROS_DISTRO-moveit-visual-tools
+    ros-$ROS_DISTRO-moveit-visual-tools \
+    ros-$ROS_DISTRO-pinocchio
 
 ######################
 # OTHER DEPENDENCIES #
 ######################
-
-# Set up pinocchio
-COPY . /home/ws/.devcontainer
-RUN chmod +x /home/ws/.devcontainer/install-pinocchio.sh
-RUN /home/ws/.devcontainer/install-pinocchio.sh
 
 # Set up other apt dependencies
 RUN apt-get install -y libyaml-cpp-dev

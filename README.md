@@ -46,7 +46,7 @@ Ensure you have the following installed on your system:
 Once inside the devcontainer, first build the ros2_sim_msgs package:
 
 ```bash
-cd ~/home/ws
+cd /home/ws
 colcon build --packages-select ros2_sim_msgs
 ```
 
