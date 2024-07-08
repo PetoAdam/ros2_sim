@@ -25,9 +25,16 @@ public:
   void initialize() override
   {
     move_group_interface_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(shared_from_this(), PLANNING_GROUP);
+  }
 
-    move_group_interface_->setMaxVelocityScalingFactor(0.2);
-    move_group_interface_->setMaxAccelerationScalingFactor(0.1);
+  void setMaxVelocityScalingFactor(float factor)
+  {
+    move_group_interface_->setMaxVelocityScalingFactor(factor);
+  }
+
+  void setMaxAccelerationScalingFactor(float factor)
+  {
+    move_group_interface_->setMaxAccelerationScalingFactor(factor);
   }
 
   moveit_msgs::msg::RobotTrajectory::SharedPtr planToCartesianPose(

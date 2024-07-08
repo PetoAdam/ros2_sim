@@ -75,7 +75,7 @@ There are preset launch configurations that can be easily run without having to 
     + To run it, makes sure to build and source the workspace and then run: ```
     ./launch_all_with_with_custom_planner.sh``` from the root directory of the repository.
     + To test it, run this command from another sourced terminal: ```
-    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0}"```
+    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"```
 
 ## Launching the simulation
 
@@ -154,11 +154,20 @@ To launch the custom motion planner, make sure the default moveit_config motion 
 ros2 launch ros2_sim_motion_planner motion_planner.launch.py
 ```
 
-The library can be tested with the following command:
+The library can be tested with the following commands:
+
+Cartesian:
 
 ```bash
-ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0}"
+ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"
 ```
+
+Joint Space:
+
+```bash
+ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 1, joint_positions: [0.5, 0.2, -0.3, 0.4, 0.0, -0.5], planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"
+```
+
 
 # Contributing
 

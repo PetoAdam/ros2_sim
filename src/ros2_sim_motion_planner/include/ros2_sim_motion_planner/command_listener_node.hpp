@@ -16,6 +16,7 @@ class CommandListenerNode : public rclcpp::Node
 {
 public:
   using PlanAndExecute = ros2_sim_msgs::action::PlanAndExecute;
+  using PlanAndExecute_Goal = ros2_sim_msgs::action::PlanAndExecute_Goal;
   using GoalHandlePlanAndExecute = rclcpp_action::ServerGoalHandle<PlanAndExecute>;
 
   CommandListenerNode()
@@ -42,8 +43,20 @@ private:
   rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID &uuid, std::shared_ptr<const PlanAndExecute::Goal> goal)
   {
     (void)uuid;
-    RCLCPP_INFO(this->get_logger(), "Received goal request with pose [%.2f, %.2f, %.2f]",
-                goal->target_pose.position.x, goal->target_pose.position.y, goal->target_pose.position.z);
+    if (goal->target_type == PlanAndExecute_Goal::CARTESIAN)
+    {
+      RCLCPP_INFO(this->get_logger(), "Received goal request with Cartesian pose [%.2f, %.2f, %.2f]",
+                  goal->target_pose.position.x, goal->target_pose.position.y, goal->target_pose.position.z);
+    }
+    else if (goal->target_type == PlanAndExecute_Goal::JOINT_SPACE)
+    {
+      RCLCPP_INFO(this->get_logger(), "Received goal request with joint positions");
+    }
+    else
+    {
+      RCLCPP_WARN(this->get_logger(), "Received goal request with unknown target type");
+      return rclcpp_action::GoalResponse::REJECT;
+    }
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
 
@@ -67,18 +80,31 @@ private:
     auto feedback = std::make_shared<PlanAndExecute::Feedback>();
     auto result = std::make_shared<PlanAndExecute::Result>();
 
-    // Convert geometry_msgs::msg::Pose to Eigen::Isometry3d
-    Eigen::Isometry3d target_pose;
-    tf2::fromMsg(goal->target_pose, target_pose);
+    motion_planner_->setMaxVelocityScalingFactor(goal->max_velocity_scaling_factor);
+    motion_planner_->setMaxAccelerationScalingFactor(goal->max_acceleration_scaling_factor);
 
-    // Plan the trajectory
-    auto start = std::chrono::steady_clock::now();
     moveit_msgs::msg::RobotTrajectory::SharedPtr trajectory = nullptr;
-    while ((trajectory = motion_planner_->planToCartesianPose(target_pose, goal->planning_pipeline, goal->planner_id)) == nullptr
-           && std::chrono::steady_clock::now() - start < std::chrono::duration<float>(goal->timeout))
+    auto start = std::chrono::steady_clock::now();
+
+    if (goal->target_type == PlanAndExecute_Goal::JOINT_SPACE)
     {
-        feedback->progress = "planning";
-        goal_handle->publish_feedback(feedback);
+      while ((trajectory = motion_planner_->planToJointspacePosition(std::vector<double>(goal->joint_positions.begin(), goal->joint_positions.end()))) == nullptr
+             && std::chrono::steady_clock::now() - start < std::chrono::duration<float>(goal->timeout))
+      {
+          feedback->progress = "planning";
+          goal_handle->publish_feedback(feedback);
+      }
+    }
+    else if (goal->target_type == PlanAndExecute_Goal::CARTESIAN)
+    {
+      Eigen::Isometry3d target_pose;
+      tf2::fromMsg(goal->target_pose, target_pose);
+      while ((trajectory = motion_planner_->planToCartesianPose(target_pose, goal->planning_pipeline, goal->planner_id)) == nullptr
+             && std::chrono::steady_clock::now() - start < std::chrono::duration<float>(goal->timeout))
+      {
+          feedback->progress = "planning";
+          goal_handle->publish_feedback(feedback);
+      }
     }
 
     if (trajectory == nullptr)
@@ -89,7 +115,6 @@ private:
         return;
     }
 
-    // Check if goal is canceled
     if (goal_handle->is_canceling()) {
       result->success = false;
       result->message = "Goal canceled";
@@ -97,7 +122,6 @@ private:
       return;
     }
 
-    // Execute the trajectory
     feedback->progress = "executing";
     goal_handle->publish_feedback(feedback);
     if (trajectory && motion_planner_->execute(trajectory)) {
