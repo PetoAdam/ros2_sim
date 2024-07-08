@@ -44,7 +44,7 @@ RUN apt-get install -y ros-$ROS_DISTRO-moveit-core \
 ######################
 
 # Set up other apt dependencies
-RUN apt-get install -y libyaml-cpp-dev
+RUN apt-get install -y libyaml-cpp-dev libwebsocketpp-dev libjsoncpp-dev
 
 # [Optional] Set the default user.
 USER $USERNAME

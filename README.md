@@ -8,11 +8,14 @@ This repository contains a ROS2 package for simulating and visualizing a UR3 rob
 - [Usage](#usage)
   - [Preset Launch Configurations](#preset-launch-configurations)
   - [Launching the Simulation](#launching-the-simulation)
-  - [Visualizing with RViz2](#visualizing-with-rviz2)
-  - [PID control](#pid-controller)
+  - [Visualization](#visualization)
+    - [RViz2](#rviz2)
+    - [ROS 2 Sim UI](#ros2-sim-ui)
+  - [PID Controller](#pid-controller)
   - [ROS 2 Control](#ros-2-control-integration)
-  - [Moveit Integration](#moveit-integration)
-  - [Custom Motion Planner Library](#custom-motion-planner-library)
+  - [Motion Planning](#motion-planning)
+    - [MoveIt Integration](#moveit-integration)
+    - [Custom Motion Planner Library](#custom-motion-planner-library)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -65,12 +68,20 @@ colcon build
 ## Preset launch configurations
 
 There are preset launch configurations that can be easily run without having to open multiple terminals for every package. Current presets:
+
  - launch_all_with_rviz.sh: This shell script runs the simulation, the PID controller, the ros2_control, the MoveIt and the RViz Visualization (with Motion Planning enabled) packages with their correct launch files.
 
     + To run it, makes sure to build and source the workspace and then run: ```
     ./launch_all_with_rviz.sh``` from the root directory of the repository.
 
-  - launch_all_with_custom_planner.sh: This shell script runs the simulation, the PID controller, the ros2_control, the motion planner and the RViz Visualization packages with their correct launch files.
+  - launch_all_with_rviz_custom_planner.sh: This shell script runs the simulation, the PID controller, the ros2_control, the motion planner and the RViz Visualization packages with their correct launch files.
+
+    + To run it, makes sure to build and source the workspace and then run: ```
+    ./launch_all_with_with_custom_planner.sh``` from the root directory of the repository.
+    + To test it, run this command from another sourced terminal: ```
+    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"```
+
+    - launch_all_with_custom_planner.sh: This shell script runs the simulation, the PID controller, the ros2_control, the motion planner and the gateway packages with their correct launch files.
 
     + To run it, makes sure to build and source the workspace and then run: ```
     ./launch_all_with_with_custom_planner.sh``` from the root directory of the repository.
@@ -85,13 +96,26 @@ To start the simulation, use the following command inside the devcontainer after
 ros2 launch src/ros2_sim_simulation/launch/simulation.launch.py
 ```
 
-## Visualizing with Rviz2
+## Visualization
 
-Rviz2 is used to render the robot inside the simulation. To launch rendering, use the following command inside the devcontainer after making sure the simulation package is running and the workspace was built and sourced:
+### RViz2
+
+RViz2 can used to render the robot inside the simulation. To launch rendering, use the following command inside the devcontainer after making sure the simulation package is running and the workspace was built and sourced:
 
 ```bash
 ros2 launch src/ros2_sim_ur3_description/launch/simulation.launch.py
 ```
+
+If you also wish to use the motion planning functionality launch:
+
+```bash
+ros2 launch src/ros2_sim_ur3_description/launch/planner.launch.py
+```
+
+
+### ROS2 Sim UI
+
+The ROS 2 Sim UI is a web-based robot renderer, currently under development. To find out more visit: https://github.com/PetoAdam/ros2_sim_ui
 
 ## PID controller
 
@@ -125,15 +149,13 @@ It can be tested via supplying it this demo trajectory:
 ros2 topic pub /robot_arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: base_link}, joint_names: ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint'], points: [{positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 0, nanosec: 0}}, {positions: [0.8, 0.8, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 3, nanosec: 0}}, {positions: [0, 0, 0, 0, 0, 0], velocities: [], accelerations: [], effort: [], time_from_start: {sec: 6, nanosec: 0}}]}" --once
 ```
 
-## MoveIt Integration
+## Motion Planning
+
+### MoveIt Integration
 
 This project utilizes MoveIt2 for motion planning. To enable motion planning and execute planned trajectories, follow these steps:
 
-The motion planner UI runs in RViz, so a new visualization windows has to be started instead of the command provided before:
-
-```bash
-ros2 launch src/ros2_sim_ur3_description/launch/planner.launch.py
-```
+The motion planner UI for the default MoveIt integration runs in RViz, so make sure to run the visualization package that has motion planning included.
 
 To launch the motion planner, run:
 
@@ -144,7 +166,7 @@ ros2 launch ros2_sim_moveit_config move_group.launch.py
 Planning and executing trajectories can be done via the MotionPlanning window inside RViz:
 ![rviz.png](resources/images/rviz.png)
 
-## Custom Motion Planner Library
+### Custom Motion Planner Library
 
 The custom motion planner library in this repository enhances the functionality of motion planning for the robot simulation. It integrates with MoveIt2 and provides additional capabilities tailored to specific scenarios. It uses a custom ros2 action to listen for advanced motion requests.
 

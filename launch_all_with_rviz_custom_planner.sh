@@ -6,7 +6,7 @@ terminate() {
     kill -TERM "$simulation_pid" 2>/dev/null
     kill -TERM "$pid_controller_pid" 2>/dev/null
     kill -TERM "$control_pid" 2>/dev/null
-    kill -TERM "$gateway_pid" 2>/dev/null
+    kill -TERM "$rviz_pid" 2>/dev/null
     kill -TERM "$planner_pid" 2>/dev/null
 }
 
@@ -25,15 +25,15 @@ pid_controller_pid=$!
 ros2 launch src/ros2_sim_control/bringup/launch/ros2_sim_control.launch.py &
 control_pid=$!
 
-# Launch gateway
-ros2 launch src/ros2_sim_gateway/launch/ros2_sim_gateway.launch.py &
-gateway_pid=$!
+# Launch rviz
+ros2 launch src/ros2_sim_ur3_description/launch/simulation.launch.py &
+rviz_pid=$!
 
 # Launch motion planner
 ros2 launch src/ros2_sim_motion_planner/launch/motion_planner.launch.py &
 planner_pid=$!
 
 # Wait for all processes to complete or be terminated
-wait $simulation_pid $pid_controller_pid $control_pid $gateway_pid $planner_pid
+wait $simulation_pid $pid_controller_pid $control_pid $rviz_pid $planner_pid
 
 echo "All processes have completed."
