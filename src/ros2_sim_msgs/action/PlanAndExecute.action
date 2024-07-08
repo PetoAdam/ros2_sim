@@ -1,0 +1,22 @@
+# Goal definition
+uint8 CARTESIAN = 0
+uint8 JOINT_SPACE = 1
+uint8 target_type
+
+geometry_msgs/Pose target_pose
+float32[] joint_positions
+
+string planning_pipeline
+string planner_id
+float32 timeout
+float32 max_velocity_scaling_factor
+float32 max_acceleration_scaling_factor
+
+---
+# Result definition
+bool success
+string message
+
+---
+# Feedback definition
+string progress

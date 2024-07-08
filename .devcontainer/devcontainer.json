@@ -28,6 +28,7 @@
         "ROS_DOMAIN_ID": "42"
     },
     "runArgs": [
+        "--gpus=all",
         "--net=host",
         "-e", "DISPLAY=${env:DISPLAY}"
     ],
