@@ -69,24 +69,34 @@ colcon build
 
 There are preset launch configurations that can be easily run without having to open multiple terminals for every package. Current presets:
 
- - launch_all_with_rviz.sh: This shell script runs the simulation, the PID controller, the ros2_control, the MoveIt and the RViz Visualization (with Motion Planning enabled) packages with their correct launch files.
+- **launch_all_with_rviz.launch.py**: This launch file runs the simulation, the PID controller, ros2_control, MoveIt, and the RViz Visualization (with Motion Planning enabled).
 
-    + To run it, makes sure to build and source the workspace and then run: ```
-    ./launch_all_with_rviz.sh``` from the root directory of the repository.
+    + To run it, make sure to build and source the workspace and then run:
+    ```bash
+    ros2 launch /home/ws/launch_all_with_rviz.launch.py
+    ```
 
-  - launch_all_with_rviz_custom_planner.sh: This shell script runs the simulation, the PID controller, the ros2_control, the motion planner and the RViz Visualization packages with their correct launch files.
+- **launch_all_with_rviz_custom_planner.launch.py**: This launch file runs the simulation, the PID controller, ros2_control, the motion planner, and the RViz Visualization packages with their correct launch files.
 
-    + To run it, makes sure to build and source the workspace and then run: ```
-    ./launch_all_with_with_custom_planner.sh``` from the root directory of the repository.
-    + To test it, run this command from another sourced terminal: ```
-    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"```
+    + To run it, make sure to build and source the workspace and then run:
+    ```bash
+    ros2 launch /home/ws/launch_all_with_rviz_custom_planner.launch.py
+    ```
+    + To test it, run this command from another sourced terminal:
+    ```bash
+    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"
+    ```
 
-    - launch_all_with_custom_planner.sh: This shell script runs the simulation, the PID controller, the ros2_control, the motion planner and the gateway packages with their correct launch files.
+- **launch_all_with_custom_planner.launch.py**: This launch file runs the simulation, the PID controller, ros2_control, the motion planner, and the gateway packages with their correct launch files.
 
-    + To run it, makes sure to build and source the workspace and then run: ```
-    ./launch_all_with_with_custom_planner.sh``` from the root directory of the repository.
-    + To test it, run this command from another sourced terminal: ```
-    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"```
+    + To run it, make sure to build and source the workspace and then run:
+    ```bash
+    ros2 launch /home/ws/launch_all_with_custom_planner.launch.py
+    ```
+    + To test it, run this command from another sourced terminal:
+    ```bash
+    ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 0, target_pose: {position: {x: 0.4, y: 0.0, z: 0.3}, orientation: {x: 1.0, y: 1.0, z: 1.0, w: 1.0}}, planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"
+    ```
 
 ## Launching the simulation
 

@@ -25,6 +25,12 @@ target_link_libraries(joint_states_listener
 
 install(TARGETS
   joint_states_listener
-  DESTINATION lib/${PROJECT_NAME})
+  DESTINATION lib/${PROJECT_NAME}
+  )
+
+install(
+  DIRECTORY launch
+  DESTINATION share/ros2_sim_gateway/
+)
 
 ament_package()

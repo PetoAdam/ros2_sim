@@ -1,6 +1,10 @@
 #ifndef ROS2_SIM_CONTROL__ROBOT_HARDWARE_HPP_
 #define ROS2_SIM_CONTROL__ROBOT_HARDWARE_HPP_
 
+#ifndef HARDWARE_INTERFACE_PUBLIC
+#define HARDWARE_INTERFACE_PUBLIC
+#endif
+
 #include <vector>
 #include <string>
 #include <unordered_map>

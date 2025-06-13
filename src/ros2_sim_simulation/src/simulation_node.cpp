@@ -12,7 +12,7 @@ SimulationNode::SimulationNode() : Node("ros2_sim_simulation_node") {
 
     simulation_steps_ = 0;
 
-    publisher_ = create_publisher<sensor_msgs::msg::JointState>("joint_states", 0);
+    publisher_ = create_publisher<sensor_msgs::msg::JointState>("sim_joint_states", 0);
     torque_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
         "torques", 0, std::bind(&SimulationNode::torqueCallback, this, std::placeholders::_1));
 
