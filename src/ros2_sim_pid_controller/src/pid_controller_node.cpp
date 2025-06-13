@@ -39,7 +39,7 @@ PIDControllerNode::PIDControllerNode() : Node("pid_controller_node") {
     // Publishers and subscribers
     torque_publisher_ = create_publisher<sensor_msgs::msg::JointState>("torques", 0);
     joint_state_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
-        "joint_states", 0, std::bind(&PIDControllerNode::jointStateCallback, this, std::placeholders::_1));
+        "sim_joint_states", 0, std::bind(&PIDControllerNode::jointStateCallback, this, std::placeholders::_1));
     desired_positions_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
         "desired_positions", 0, std::bind(&PIDControllerNode::setDesiredPositionsCallback, this, std::placeholders::_1));
 

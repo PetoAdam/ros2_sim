@@ -27,7 +27,7 @@ CallbackReturn RobotSystem::on_init(const hardware_interface::HardwareInfo & inf
     "desired_positions", 0);
 
   joint_state_subscriber_ = node_->create_subscription<sensor_msgs::msg::JointState>(
-    "joint_states", 0, std::bind(&RobotSystem::jointStateCallback, this, std::placeholders::_1));
+    "sim_joint_states", 0, std::bind(&RobotSystem::jointStateCallback, this, std::placeholders::_1));
 
   return CallbackReturn::SUCCESS;
 }
