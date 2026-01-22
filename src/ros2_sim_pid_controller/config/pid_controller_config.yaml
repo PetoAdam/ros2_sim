@@ -1,7 +1,11 @@
 ros2_sim_pid_controller_node:
   ros__parameters:
     urdf_path: "/home/ws/src/ros2_sim_ur3_description/urdf/robot.urdf"
-    kp: [8.6, 8.6, 8.6, 6.3, 6.3, 3.3]
-    ki: [4.1, 4.1, 4.1, 0.1, 0.1, 0.1]
-    kd: [2.1, 2.1, 2.1, 0.2, 0.1, 0.1]
+    kp: [1.9814399999999996, 2.9721599999999992, 1.4860799999999996, 0.7257600000000001, 1.8579456, 1.16785152]
+    ki: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    kd: [2.3625000000000003, 3.54375, 0.7875000000000001, 0.15000000000000002, 0.037500000000000006, 0.0125]
     dt: 0.005
+    use_gravity_ff: true
+    use_coriolis_ff: true
+    allow_gain_updates: true
+    reset_integral_on_gain_change: true

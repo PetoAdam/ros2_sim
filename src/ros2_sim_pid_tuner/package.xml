@@ -1,24 +1,23 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ros2_sim_simulation</name>
+  <name>ros2_sim_pid_tuner</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>PID tuning node for ros2_sim</description>
   <maintainer email="peto.adam@yahoo.com">Adam Peto</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
 
-  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
-  <depend>visualization_msgs</depend>
-  <depend>urdf</depend>
   <depend>std_srvs</depend>
+  <depend>rcl_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>

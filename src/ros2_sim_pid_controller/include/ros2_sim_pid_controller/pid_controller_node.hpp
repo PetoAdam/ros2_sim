@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <algorithm>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 class PIDControllerNode : public rclcpp::Node {
 public:
@@ -20,6 +21,7 @@ private:
     void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
     void setDesiredPositionsCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
     void update();
+    rcl_interfaces::msg::SetParametersResult onSetParameters(const std::vector<rclcpp::Parameter>& parameters);
 
     pinocchio::Model model_;
     pinocchio::Data data_;
@@ -33,6 +35,11 @@ private:
     double max_torque_;
     Eigen::VectorXd max_integral_;
     Eigen::VectorXd max_derivative_;
+    bool use_gravity_ff_;
+    bool use_coriolis_ff_;
+    bool allow_gain_updates_;
+    bool reset_integral_on_gain_change_;
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr params_callback_handle_;
 
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr torque_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_subscriber_;

@@ -1,0 +1,43 @@
+ros2_sim_pid_tuner:
+  ros__parameters:
+    pid_node_name: "ros2_sim_pid_controller_node"
+    reset_service: "/reset_simulation"
+    joint_state_topic: "/sim_joint_states"
+    desired_positions_topic: "/desired_positions"
+
+    eval_time: 3.0
+    warmup_time: 0.6
+    log_every_n_samples: 200
+
+    use_current_gains: true
+    base_kp: [8.6, 8.6, 8.6, 6.3, 6.3, 3.3]
+    base_ki: [4.1, 4.1, 4.1, 0.1, 0.1, 0.1]
+    base_kd: [2.1, 2.1, 2.1, 0.2, 0.1, 0.1]
+
+    kp_multipliers: [0.8, 1.0, 1.2, 1.5]
+    ki_multipliers: [0.05, 0.1, 0.3]
+    kd_multipliers: [0.8, 1.0, 1.2]
+    max_trials: 30
+    tuning_algorithm: "bayes"
+    bayes_calls: 30
+    tuning_mode: "combined"  # global | per_joint | combined
+    per_joint_indices: []  # empty = all joints
+
+    desired_positions: [0.2, 0.2, 0.0, 0.0, 0.0, 0.0]
+    desired_positions_set_size: 6
+    desired_positions_sets: [
+      0.2, 0.2, 0.0, 0.0, 0.0, 0.0,
+      0.4, -0.2, 0.3, 0.0, 0.0, 0.0,
+      0.1, 0.3, -0.2, 0.2, 0.0, 0.0
+    ]
+    randomize_sets: true
+    set_seed: 42
+    use_gravity_ff: true
+    use_coriolis_ff: true
+    weight_abs_error: 3.0
+    weight_velocity: 0.2
+    weight_final_error: 1.0
+    weight_overshoot: 0.7
+    max_overshoot_ratio: 0.1
+    overshoot_penalty: 40.0
+    log_full_gains: false

@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(urdf REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(pinocchio REQUIRED)
@@ -35,7 +36,7 @@ include_directories(
 )
 
 add_executable(${PROJECT_NAME}_node src/simulation_node.cpp)
-ament_target_dependencies(${PROJECT_NAME}_node rclcpp sensor_msgs urdf pinocchio yaml-cpp)
+ament_target_dependencies(${PROJECT_NAME}_node rclcpp sensor_msgs std_srvs urdf pinocchio yaml-cpp)
 
 target_link_libraries(${PROJECT_NAME}_node ${pinocchio_LIBRARIES} ${YAML_CPP_LIBRARIES})
 

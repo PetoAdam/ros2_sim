@@ -1,20 +1,30 @@
 #include "ros2_sim_simulation/simulation_node.hpp"
+#include <cmath>
 
 SimulationNode::SimulationNode() : Node("ros2_sim_simulation_node") {
     // Declare and get parameters
     declare_parameter("urdf_path", "");
     declare_parameter("dt", 0.005);
+    declare_parameter("joint_viscous_friction", 0.01);
     declare_parameter("damping_factor", -0.01);
 
     get_parameter("urdf_path", urdf_path_);
     get_parameter("dt", dt_);
-    get_parameter("damping_factor", damping_factor_);
+    get_parameter("joint_viscous_friction", joint_viscous_friction_);
+    double damping_factor = 0.0;
+    get_parameter("damping_factor", damping_factor);
+    if (joint_viscous_friction_ == 0.0 && damping_factor != 0.0) {
+        joint_viscous_friction_ = std::abs(damping_factor);
+    }
 
     simulation_steps_ = 0;
 
     publisher_ = create_publisher<sensor_msgs::msg::JointState>("sim_joint_states", 0);
     torque_subscriber_ = create_subscription<sensor_msgs::msg::JointState>(
         "torques", 0, std::bind(&SimulationNode::torqueCallback, this, std::placeholders::_1));
+    reset_service_ = create_service<std_srvs::srv::Empty>(
+        "reset_simulation",
+        std::bind(&SimulationNode::resetCallback, this, std::placeholders::_1, std::placeholders::_2));
 
     pinocchio::urdf::buildModel(urdf_path_, model_);
     data_ = pinocchio::Data(model_);
@@ -52,8 +62,8 @@ void SimulationNode::update() {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Apply damping
-    tau_ = damping_factor_ * v_;
+    // Apply joint viscous friction
+    tau_ = -joint_viscous_friction_ * v_;
 
     // Add external torque from PID controller
     tau_ += external_tau_;
@@ -102,6 +112,12 @@ void SimulationNode::torqueCallback(const sensor_msgs::msg::JointState::SharedPt
     if (msg->effort.size() == static_cast<size_t>(external_tau_.size())) {
         Eigen::VectorXd::Map(&external_tau_[0], external_tau_.size()) = Eigen::VectorXd::Map(msg->effort.data(), msg->effort.size());
     }
+}
+
+void SimulationNode::resetCallback(const std::shared_ptr<std_srvs::srv::Empty::Request>,
+                                   std::shared_ptr<std_srvs::srv::Empty::Response>) {
+    RCLCPP_INFO(this->get_logger(), "Reset service called. Resetting simulation state.");
+    reset();
 }
 
 int main(int argc, char *argv[]) {

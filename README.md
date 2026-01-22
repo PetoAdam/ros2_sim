@@ -145,6 +145,26 @@ ros2 topic pub /desired_positions sensor_msgs/msg/JointState "{header: {stamp: {
 
 This command sends the joints to [0.2, 0.2, 0.0, 0.0, 0.0, 0.0].
 
+### PID Tuner Node
+
+You can run an automated tuner node that sweeps gain multipliers, resets the simulation between trials, and logs detailed progress:
+
+```bash
+ros2 launch ros2_sim_pid_tuner pid_tuner.launch.py
+```
+
+Tune parameters in:
+
+```bash
+src/ros2_sim_pid_tuner/config/pid_tuner.yaml
+```
+
+Modes:
+
+- global: scales all joints together
+- per_joint: tunes each joint independently
+- combined: global pass, then per-joint refinement
+
 ## ROS 2 Control Integration
 
 The project also comes with its own ros2_control integration, which converts trajectory data to joint positions, which are sent towards the PID controller.
