@@ -1,6 +1,8 @@
-# ROS2 Robot Arm Simulation and Visualization
+# ROS 2 Sim — High-Frequency Robot Arm Simulation
 
-This repository contains a ROS2 package for simulating and visualizing a UR3 robot. The package includes the necessary URDF files, mesh files, and nodes to run the simulation and visualize the robot in RViz2.
+ros2_sim is a learning- and research-oriented robot arm simulator focused on **high-frequency control**, **analytical dynamics**, and **deterministic software‑in‑the‑loop (SIL)** testing. It targets kHz‑class control loops by leveraging **Pinocchio** for fast and accurate rigid‑body dynamics instead of heavy contact‑rich physics engines.
+
+This is **not** a general-purpose physics engine or a Gazebo replacement. The intent is to teach and enable reliable controller development with a clear, inspectable dynamics pipeline.
 
 ## Table of Contents
 
@@ -8,16 +10,29 @@ This repository contains a ROS2 package for simulating and visualizing a UR3 rob
 - [Usage](#usage)
   - [Preset Launch Configurations](#preset-launch-configurations)
   - [Launching the Simulation](#launching-the-simulation)
-  - [Visualization](#visualization)
-    - [RViz2](#rviz2)
-    - [ROS 2 Sim UI](#ros2-sim-ui)
+- [Visualization](#visualization)
+  - [RViz2](#rviz2)
+  - [ROS 2 Sim UI (separate repo)](#ros-2-sim-ui-separate-repo)
+- [Academic Notes](#academic-notes)
   - [PID Controller](#pid-controller)
+- [PID Tuner](#pid-tuner)
   - [ROS 2 Control](#ros-2-control-integration)
   - [Motion Planning](#motion-planning)
     - [MoveIt Integration](#moveit-integration)
     - [Custom Motion Planner Library](#custom-motion-planner-library)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Philosophy (Why not Gazebo?)
+
+ros2_sim prioritizes:
+
+- **High‑frequency control loops** (kHz‑range)
+- **Analytical dynamics** (mass matrices, Jacobians, Coriolis terms)
+- **Deterministic stepping** for reproducible SIL testing
+- **Learning value**: dynamics are visible, hackable, and debuggable
+
+It does **not** aim for maximum contact realism, photorealism, or full soft-body physics. Those are intentionally out-of-scope to preserve stability and performance for controller development.
 
 ## Installation
 
@@ -123,9 +138,19 @@ ros2 launch src/ros2_sim_ur3_description/launch/planner.launch.py
 ```
 
 
-### ROS2 Sim UI
+### ROS 2 Sim UI (separate repo)
 
-The ROS 2 Sim UI is a web-based robot renderer, currently under development. To find out more visit: https://github.com/PetoAdam/ros2_sim_ui
+The web UI now lives in a dedicated repository:
+
+https://github.com/PetoAdam/ros2_sim_ui
+
+It remains an optional companion for ros2_sim, providing a lightweight, modern web-based renderer that connects to the gateway via WebSocket. See the UI repository for installation and usage details.
+
+![ROS 2 Sim UI](resources/images/ui.png)
+
+## Academic Notes
+
+For a more formal overview of the dynamics, control framing, and simulation assumptions, see [docs/ACADEMIC.md](docs/ACADEMIC.md).
 
 ## PID controller
 
@@ -145,7 +170,7 @@ ros2 topic pub /desired_positions sensor_msgs/msg/JointState "{header: {stamp: {
 
 This command sends the joints to [0.2, 0.2, 0.0, 0.0, 0.0, 0.0].
 
-### PID Tuner Node
+## PID Tuner
 
 You can run an automated tuner node that sweeps gain multipliers, resets the simulation between trials, and logs detailed progress:
 
@@ -220,6 +245,14 @@ Joint Space:
 ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 1, joint_positions: [0.5, 0.2, -0.3, 0.4, 0.0, -0.5], planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"
 ```
 
+
+## Roadmap (high‑level)
+
+- External force/wrench injection for disturbance studies
+- Deterministic stepping + fixed‑dt execution modes
+- Obstacle avoidance (kinematic / Jacobian‑based)
+- MCP integration (planned)
+- SIL‑oriented tooling (record/replay, noise models, regression tests)
 
 # Contributing
 
