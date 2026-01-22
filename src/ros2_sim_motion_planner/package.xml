@@ -12,6 +12,9 @@
 
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>action_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>ros2_sim_msgs</exec_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>

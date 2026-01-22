@@ -67,4 +67,16 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  scripts/pick_and_place_demo.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME pick_and_place_demo
+)
+
+install(PROGRAMS
+  scripts/welding_demo.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME welding_demo
+)
+
 ament_package()

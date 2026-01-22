@@ -243,6 +243,30 @@ Joint Space:
 ros2 action send_goal /plan_and_execute ros2_sim_msgs/action/PlanAndExecute "{target_type: 1, joint_positions: [0.5, 0.2, -0.3, 0.4, 0.0, -0.5], planning_pipeline: 'pilz_industrial_motion_planner', planner_id: 'PTP', timeout: 10.0, max_velocity_scaling_factor: 0.2, max_acceleration_scaling_factor: 0.1}"
 ```
 
+Demo scripts:
+
+These run higher-level motion sequences using the same `plan_and_execute` action interface.
+
+First, start the stack (recommended):
+
+```bash
+ros2 launch /home/ws/launch_all_with_rviz_custom_planner.launch.py
+```
+
+Then run one of the demos from another sourced terminal:
+
+Pick-and-place (PTP to start + LIN vertical moves, placing on the other side):
+
+```bash
+ros2 run ros2_sim_motion_planner pick_and_place_demo
+```
+
+Welding (PTP to approach + LIN seam tracing with small dwells at corners):
+
+```bash
+ros2 run ros2_sim_motion_planner welding_demo
+```
+
 
 ## Roadmap (high‑level)
 
