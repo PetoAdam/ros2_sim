@@ -154,9 +154,7 @@ For a more formal overview of the dynamics, control framing, and simulation assu
 
 ## PID controller
 
-The PID controller package is responsible for turning desired joint positions into torque values for the joints. Currently, the gains are not perfectly tuned yet, but the controller works properly.
-
-TODO: add back optional tuning code for the PID controller
+The PID controller package is responsible for turning desired joint positions into torque values for the joints.
 
 ```bash
 ros2 launch src/ros2_sim_pid_controller/launch/pid_controller.launch.py
