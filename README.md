@@ -273,7 +273,7 @@ ros2 run ros2_sim_motion_planner welding_demo
 - External force/wrench injection for disturbance studies
 - Deterministic stepping + fixed‑dt execution modes
 - Obstacle avoidance (kinematic / Jacobian‑based)
-- MCP integration (planned)
+- MPC
 - SIL‑oriented tooling (record/replay, noise models, regression tests)
 
 # Contributing
