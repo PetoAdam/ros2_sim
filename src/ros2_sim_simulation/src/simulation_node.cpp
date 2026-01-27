@@ -45,7 +45,7 @@ SimulationNode::SimulationNode() : Node("ros2_sim_simulation_node") {
     q_desired_ = Eigen::VectorXd::Zero(model_.nq);
 
     timer_ = create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(dt_ * 1000)), std::bind(&SimulationNode::update, this));
+        std::chrono::duration<double>(dt_), std::bind(&SimulationNode::update, this));
 }
 
 void SimulationNode::reset() {
@@ -99,10 +99,20 @@ void SimulationNode::update() {
     simulation_steps_++;
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    auto sleep_time = std::chrono::milliseconds(static_cast<int>(dt_ * 1000)) - std::chrono::milliseconds(elapsed_time);
+    const auto elapsed = end_time - start_time;
+    const auto target = std::chrono::duration<double>(dt_);
+    if (elapsed > target * 1.1) {
+        const auto overrun = std::chrono::duration<double>(elapsed - target).count();
+        const auto elapsed_s = std::chrono::duration<double>(elapsed).count();
+        RCLCPP_WARN_THROTTLE(
+            this->get_logger(), *this->get_clock(), 2000,
+            "Simulation step overran by %.6fs (target dt=%.6fs, actual=%.6fs).",
+            overrun, dt_, elapsed_s);
+        return;
+    }
 
-    if (sleep_time.count() > 0) {
+    const auto sleep_time = target - elapsed;
+    if (sleep_time.count() > 0.0) {
         std::this_thread::sleep_for(sleep_time);
     }
 }
