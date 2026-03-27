@@ -36,6 +36,9 @@ def generate_launch_description():
         IncludeLaunchDescription(PythonLaunchDescriptionSource(simulation_launch)),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(pid_controller_launch)),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(control_launch)),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(rviz_launch)),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(rviz_launch),
+            launch_arguments={'use_robot_state_publisher': 'false'}.items(),
+        ),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(planner_launch)),
     ])

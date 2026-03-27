@@ -9,11 +9,19 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>Eigen3</depend>
+  <depend>geometry_msgs</depend>
+  <depend>moveit_msgs</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
 
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>action_msgs</exec_depend>
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>ros2_sim_msgs</exec_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
 

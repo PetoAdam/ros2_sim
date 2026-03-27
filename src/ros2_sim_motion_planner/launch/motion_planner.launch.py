@@ -22,7 +22,7 @@ def launch_setup(context, *args, **kwargs):
             pipelines=["ompl", "pilz_industrial_motion_planner"]
         )
         .planning_scene_monitor(
-            publish_robot_description=True, publish_robot_description_semantic=True
+            publish_robot_description=False, publish_robot_description_semantic=True
         )
         .joint_limits(file_path=get_package_share_directory('ros2_sim_moveit_config')
                       + "/config/joint_limits.yaml")

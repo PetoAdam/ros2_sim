@@ -27,7 +27,8 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 class HARDWARE_INTERFACE_PUBLIC RobotSystem : public hardware_interface::SystemInterface
 {
 public:
-  CallbackReturn on_init(const hardware_interface::HardwareInfo & info) override;
+  CallbackReturn on_init(
+    const hardware_interface::HardwareComponentInterfaceParams & params) override;
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
   return_type read(const rclcpp::Time & time, const rclcpp::Duration & period) override;
@@ -42,6 +43,7 @@ private:
 
   std::vector<double> joint_positions_;
   std::vector<double> joint_commands_;
+  std::unordered_map<std::string, size_t> joint_name_to_index_;
 
   std::unordered_map<std::string, std::vector<std::string>> joint_interfaces = {
     {"position", {}}};

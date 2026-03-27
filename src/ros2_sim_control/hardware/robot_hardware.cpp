@@ -4,30 +4,42 @@
 
 namespace ros2_sim_control
 {
-CallbackReturn RobotSystem::on_init(const hardware_interface::HardwareInfo & info)
+CallbackReturn RobotSystem::on_init(
+  const hardware_interface::HardwareComponentInterfaceParams & params)
 {
-  if (SystemInterface::on_init(info) != CallbackReturn::SUCCESS) {
+  if (SystemInterface::on_init(params) != CallbackReturn::SUCCESS) {
     return CallbackReturn::ERROR;
   }
 
-  joint_positions_.assign(6, 0);
-  joint_commands_.assign(6, 0);
+  joint_positions_.assign(info_.joints.size(), 0.0);
+  joint_commands_.assign(info_.joints.size(), 0.0);
+  joint_interfaces["position"].clear();
+  joint_name_to_index_.clear();
 
+  size_t joint_index = 0;
   for (const auto & joint : info_.joints)
   {
+    joint_name_to_index_[joint.name] = joint_index++;
     for (const auto & interface : joint.state_interfaces)
     {
       joint_interfaces[interface.name].push_back(joint.name);
     }
   }
 
-  node_ = rclcpp::Node::make_shared("robot_hardware_node");
+  node_ = get_node();
+  if (!node_)
+  {
+    RCLCPP_ERROR(get_logger(), "Failed to acquire framework-managed node for hardware component.");
+    return CallbackReturn::ERROR;
+  }
+
+  const auto qos = rclcpp::QoS(rclcpp::KeepLast(10)).reliable();
 
   desired_positions_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(
-    "desired_positions", 0);
+    "desired_positions", qos);
 
   joint_state_subscriber_ = node_->create_subscription<sensor_msgs::msg::JointState>(
-    "sim_joint_states", 0, std::bind(&RobotSystem::jointStateCallback, this, std::placeholders::_1));
+    "sim_joint_states", qos, std::bind(&RobotSystem::jointStateCallback, this, std::placeholders::_1));
 
   return CallbackReturn::SUCCESS;
 }
@@ -60,13 +72,17 @@ std::vector<hardware_interface::CommandInterface> RobotSystem::export_command_in
 
 return_type RobotSystem::read(const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  rclcpp::spin_some(node_);
+  (void)time;
+  (void)period;
   return return_type::OK;
 }
 
 return_type RobotSystem::write(const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  (void)time;
+  (void)period;
   auto desired_positions_msg = std::make_shared<sensor_msgs::msg::JointState>();
+  desired_positions_msg->header.stamp = node_->get_clock()->now();
   int ind = 0;
   for (const auto & joint : info_.joints) {
     desired_positions_msg->name.push_back(joint.name);
@@ -78,8 +94,12 @@ return_type RobotSystem::write(const rclcpp::Time & time, const rclcpp::Duration
 
 void RobotSystem::jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
 {
-  for (size_t i = 0; i < msg->name.size(); ++i) {
-    joint_positions_[i] = msg->position[i];
+  const auto count = std::min(msg->name.size(), msg->position.size());
+  for (size_t i = 0; i < count; ++i) {
+    const auto it = joint_name_to_index_.find(msg->name[i]);
+    if (it != joint_name_to_index_.end() && it->second < joint_positions_.size()) {
+      joint_positions_[it->second] = msg->position[i];
+    }
   }
 }
 

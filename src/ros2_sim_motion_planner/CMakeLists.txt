@@ -5,14 +5,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
-find_package(moveit_common REQUIRED)
-moveit_package()
+find_package(ament_cmake REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rosidl_default_runtime REQUIRED)
-find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(ros2_sim_msgs REQUIRED)
@@ -20,28 +19,24 @@ find_package(tf2 REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-# include directories
-include_directories(
-  include
-  ${tf2_INCLUDE_DIRS}
-  ${tf2_eigen_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-)
-
 # Command listener executable
 add_executable(command_listener_node src/command_listener_node.cpp)
+target_include_directories(command_listener_node PRIVATE
+  include
+  ${EIGEN3_INCLUDE_DIRS}
+)
 ament_target_dependencies(command_listener_node
   rclcpp
   rclcpp_action
   geometry_msgs
   std_msgs
-  moveit_ros_planning_interface
+  moveit_msgs
   ros2_sim_msgs
   tf2
   tf2_eigen
-  Eigen3
 )
 target_link_libraries(command_listener_node
+  moveit_ros_planning_interface::moveit_move_group_interface
   tf2::tf2
   tf2_eigen::tf2_eigen
   Eigen3::Eigen
@@ -53,12 +48,19 @@ install(TARGETS
 
 # Executable for testing
 add_executable(motion_planner_tester_node src/motion_planner_tester.cpp)
+target_include_directories(motion_planner_tester_node PRIVATE
+  include
+  ${EIGEN3_INCLUDE_DIRS}
+)
 ament_target_dependencies(motion_planner_tester_node
   rclcpp
   sensor_msgs
-  moveit_ros_planning_interface
+  moveit_msgs
 )
-target_link_libraries(motion_planner_tester_node)
+target_link_libraries(motion_planner_tester_node
+  moveit_ros_planning_interface::moveit_move_group_interface
+  Eigen3::Eigen
+)
 install(TARGETS motion_planner_tester_node
   DESTINATION lib/${PROJECT_NAME}
 )

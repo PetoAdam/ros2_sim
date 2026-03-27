@@ -30,6 +30,9 @@ def generate_launch_description():
         IncludeLaunchDescription(PythonLaunchDescriptionSource(simulation_launch)),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(pid_controller_launch)),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(control_launch)),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(gateway_launch)),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(gateway_launch),
+            launch_arguments={'use_robot_description_publisher': 'false'}.items(),
+        ),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(planner_launch)),
     ])

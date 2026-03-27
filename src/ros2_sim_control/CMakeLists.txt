@@ -46,10 +46,6 @@ install(
   DESTINATION include/ros2_sim_control
 )
 install(
-  DIRECTORY description/urdf
-  DESTINATION share/ros2_sim_control
-)
-install(
   DIRECTORY bringup/launch bringup/config
   DESTINATION share/ros2_sim_control
 )

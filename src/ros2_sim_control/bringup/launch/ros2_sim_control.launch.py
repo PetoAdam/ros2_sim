@@ -13,7 +13,7 @@ import os
 def generate_launch_description():
     
     robot_description_path = os.path.join(
-        get_package_share_directory('ros2_sim_control'),
+        get_package_share_directory('ros2_sim_ur3_description'),
         'urdf',
         'robot.urdf'
     )
